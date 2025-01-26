@@ -465,7 +465,7 @@ class SystemMonitorWindow(Gtk.ApplicationWindow):
 
     def open_wifi_control(self, button):
         try:
-            subprocess.Popen(['kitty', 'iwctl'], stderr=subprocess.DEVNULL)
+            subprocess.Popen(['nm-connection-editor'], stderr=subprocess.DEVNULL)
         except Exception:
             pass
 
