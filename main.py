@@ -192,7 +192,50 @@ class SystemMonitorWindow(Gtk.ApplicationWindow):
         volume_box.append(volume_label)
         volume_box.append(self.volume_scale)
         controls_box.append(volume_box)
-    
+        
+ 
+# Основной контейнер для музыкального блока (вертикальная ориентация)
+        music_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        music_box.add_css_class("widget-box")
+
+# Контейнер для кнопок (горизонтальная ориентация)
+        button_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+
+        prev_button = Gtk.Button(label="󰼨")
+        play_pause_button = Gtk.Button(label="󰏥")
+        next_button = Gtk.Button(label="󰼧")
+
+# Расширение кнопок для равномерного размещения
+        prev_button.set_hexpand(True)
+        play_pause_button.set_hexpand(True)
+        next_button.set_hexpand(True)
+
+# Подключение обработчиков событий
+        prev_button.connect('clicked', lambda x: self.music_control('previous'))
+        play_pause_button.connect('clicked', lambda x: self.music_control('play-pause'))
+        next_button.connect('clicked', lambda x: self.music_control('next'))
+
+# Добавляем кнопки в горизонтальный контейнер
+        button_box.append(prev_button)
+        button_box.append(play_pause_button)
+        button_box.append(next_button)
+
+# Метка для отображения текущего трека
+        self.track_label = Gtk.Label(label="Музыка не играет")
+        self.track_label.set_halign(Gtk.Align.CENTER)
+        self.track_label.add_css_class("network-speed-label")
+
+# Добавляем контейнер с кнопками и метку в вертикальный контейнер
+        music_box.append(button_box)  # Кнопки сверху
+        music_box.append(self.track_label)  # Трек снизу
+
+# Добавляем музыкальный блок в основной контейнер
+        main_box.append(music_box)
+
+# Добавьте в initialize_current_values():
+        self.track_label.set_text(self.get_current_track())
+
+
         # Яркость
         brightness_box = Gtk.Box(orientation=VERTICAL, spacing=4)
         brightness_label = Gtk.Label(label="Яркость")
@@ -209,26 +252,40 @@ class SystemMonitorWindow(Gtk.ApplicationWindow):
 
         self.initialize_current_values()
 
-        # Системные кнопки
-        system_buttons_box = Gtk.Box(orientation=HORIZONTAL, spacing=8)
+  
+# Системные кнопки
+        system_buttons_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
         system_buttons_box.add_css_class("widget-box")
-        
-        # WiFi кнопка
+
+# Контейнер для кнопок (горизонтальная ориентация)
+        button_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+
+# Создание кнопок
         wifi_button = Gtk.Button(label="WiFi")
-        wifi_button.connect('clicked', self.open_wifi_control)
-        system_buttons_box.append(wifi_button)
-        
-        # Уведомления кнопка
         notif_button = Gtk.Button(label="Уведомления")
-        notif_button.connect('clicked', self.toggle_notifications)
-        system_buttons_box.append(notif_button)
-        
-        # Системные действия кнопка
         system_action_button = Gtk.Button(label="Система")
+
+# Расширение кнопок для равномерного размещения
+        wifi_button.set_hexpand(True)
+        notif_button.set_hexpand(True)
+        system_action_button.set_hexpand(True)
+
+# Подключение обработчиков событий
+        wifi_button.connect('clicked', self.open_wifi_control)
+        notif_button.connect('clicked', self.toggle_notifications)
         system_action_button.connect('clicked', self.open_system_actions)
-        system_buttons_box.append(system_action_button)
-        
+
+# Добавляем кнопки в горизонтальный контейнер
+        button_box.append(wifi_button)
+        button_box.append(notif_button)
+        button_box.append(system_action_button)
+
+# Добавляем контейнер с кнопками в вертикальный контейнер
+        system_buttons_box.append(button_box)
+
+# Добавляем системный блок в основной контейнер
         main_box.append(system_buttons_box)
+
 
         # Запуск обновлений
         self.update_time()
@@ -260,30 +317,26 @@ class SystemMonitorWindow(Gtk.ApplicationWindow):
         return True
     
    
+    def get_current_track(self):
+        try:
+            # Получаем информацию о текущем треке
+            artist = subprocess.check_output(['playerctl', 'metadata', 'artist'], text=True).strip()
+            title = subprocess.check_output(['playerctl', 'metadata', 'title'], text=True).strip()
+            return f"{artist} - {title}"
+        except subprocess.CalledProcessError:
+            return "Музыка не играет"
+
+    def music_control(self, action):
+        try:
+            subprocess.run(['playerctl', action], check=True)
+            # Обновляем информацию о треке после действия
+            current_track = self.get_current_track()
+            self.track_label.set_text(current_track)
+        except subprocess.CalledProcessError:
+            pass
 
 
-
-    # def init_volume_scale(self, scale):
-    #     try:
-    #         # Get current volume
-    #         output = subprocess.check_output(['wpctl', 'status'], stderr=subprocess.DEVNULL).decode()
-    #         match = re.search(r'Volume: (\d+)%', output)
-    #         if match:
-    #             current_volume = int(match.group(1))
-    #             scale.set_value(current_volume)
-    #     except Exception:
-    #         scale.set_value(50)  # Default value
-    #
-    # def init_brightness_scale(self, scale):
-    #     try:
-    #         # Get current brightness
-    #         output = subprocess.check_output(['brightnessctl', 'i'], stderr=subprocess.DEVNULL).decode()
-    #         match = re.search(r'Current brightness: (\d+)%', output)
-    #         if match:
-    #             current_brightness = int(match.group(1))
-    #             scale.set_value(current_brightness)
-    #     except Exception:
-    #         scale.set_value(50)  # Default value
+   
     def initialize_current_values(self):
     # Получение текущей громкости
         try:
@@ -371,7 +424,7 @@ class SystemMonitorWindow(Gtk.ApplicationWindow):
 
     def open_wifi_control(self, button):
         try:
-            subprocess.Popen(['kitty', 'iwctl'], stderr=subprocess.DEVNULL)
+            subprocess.Popen(['nm-connection-editor'], stderr=subprocess.DEVNULL)
         except Exception:
             pass
 
